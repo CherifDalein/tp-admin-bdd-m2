@@ -1,6 +1,8 @@
-# TP — InfluxDB ↔ Telegraf ↔ Kafka
+<p align="center"><b>Mamadou Cherif DIALLO - Master 2 Informatique</b></p>
 
-## 🎯 Objectifs
+# TP1 ADMINISTRATION BASE DE DONNEES
+
+## Objectifs
 
 Ce TP a pour but de mettre en place un pipeline **End-to-End (E2E)** permettant d’observer le flux complet de données entre **InfluxDB**, **Telegraf**, **Kafka** et du **code Python**.
 L’objectif est de comprendre comment ces outils interagissent dans une architecture distribuée et d’observer le flux de messages via **Kafdrop**.
