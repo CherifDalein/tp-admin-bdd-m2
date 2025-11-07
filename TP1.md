@@ -243,9 +243,9 @@ Le schéma doit montrer clairement le flux complet de données :
            └──────┬───────┘
                   │
                   ▼
-           ┌──────────────┐
-           │   InfluxDB   │
-           └──────┬───────┘
+            ┌──────────────┐
+            │   InfluxDB   │
+            └──────┬───────┘
              │             │
              ▼             ▼
       ┌──────────┐     ┌──────────┐
