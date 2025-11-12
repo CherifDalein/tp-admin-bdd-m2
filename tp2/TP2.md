@@ -1,4 +1,6 @@
-# TP — Observabilité Kafka via Docker Compose, Telegraf et InfluxDB
+<p align="center"><b>Mamadou Cherif DIALLO - Master 2 Informatique</b></p>
+
+# TP2 ADMINISTRATION BASE DE DONNEES
 
 ## Présentation
 
