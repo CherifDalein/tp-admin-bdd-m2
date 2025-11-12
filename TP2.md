@@ -157,68 +157,57 @@ Dans ce TP :
 
 ---
 
-### 10. Fonction d’agrégation pour mettre en valeur les variations
-
-Pour des courbes ascendantes continues (compteurs cumulés) :
-
-* **`derivative()`** ou **`non_negative_derivative()`** (InfluxDB Flux)
-* Permet de calculer la variation par intervalle et mettre en évidence les pics ou ralentissements.
-
----
-
-### 11. Impact d’une perte de broker
-
-* Exécution du script `suspend_random_broker_loop.sh` :
-
-  1. Un broker est arrêté aléatoirement.
-  2. Les métriques affectées :
-
-     * `broker/replication` : partitions deviennent in-sync ou offline
-     * `consumer lag` : certains consumers prennent du retard
-     * `network` : baisse du throughput sur le broker stoppé
-  3. Après redémarrage du broker :
-
-     * Les partitions se resynchronisent
-     * Les courbes retrouvent un comportement normal
-
-**Exemple de requête Flux** pour observer la variation de consumer lag :
+**10. Requête Flux pour voir les variations (exemple `kafka_active_controller`)**
 
 ```flux
-from(bucket:"kafka_metrics")
+from(bucket: "kafka_metrics")
   |> range(start: -30m)
-  |> filter(fn: (r) => r._measurement == "consumer_lag" and r._field == "lag")
-  |> derivative(nonNegative: true, unit: 1m)
+  |> filter(fn: (r) => r._measurement == "kafka_active_controller")
+  |> filter(fn: (r) => r._field == "Value")
+  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
 ```
+
+* Fonction d’agrégation `mean` dans une fenêtre de 1 minute pour lisser les valeurs et montrer les changements.
+
+![Mon image](img1.png)
+
+**11. Requête Flux pour observer la perte puis le retour d’un broker (`UnderReplicatedPartitions`)**
+
+```flux
+from(bucket: "kafka_metrics")
+  |> range(start: -30m)
+  |> filter(fn: (r) => r._measurement == "kafka_under_replicated_partitions")
+  |> filter(fn: (r) => r._field == "Value")
+  |> aggregateWindow(every: 1m, fn: max, createEmpty: false)
+```
+
+* Lance `suspend_random_broker_loop.sh`.
+* Pendant 60 s, un broker est suspendu → la valeur `UnderReplicatedPartitions` augmente (partitions non répliquées).
+* Après 60 s, le broker est relancé → les partitions se répliquent et la métrique redescend à zéro.
+* Ce graphique montre clairement l’impact d’une panne temporaire.
+
+![Mon image](img2.png)
 
 ---
 
 ## “To infinity and beyond!”
 
-### 12. Autres métriques et cas d’usage
+**12. Autres métriques et cas d’usage**
 
-#### Métriques supplémentaires :
+* **Metric : kafka_network_request_total** → identifier les pics de requêtes par broker pour optimiser la répartition de charge.
+* **Metric : kafka_topic_messages_in_total** → visualiser la production de messages sur chaque topic pour anticiper les besoins de stockage.
 
-* `jvm.memory.used` : mémoire utilisée par Kafka
-* `jvm.threads.count` : nombre de threads actifs
-* `controller.active_controller_count` : statut de leadership
-* `network.request_metrics` : latence des requêtes
-
-#### Cas d’usage :
-
-1. **Alerte sur saturation de mémoire JVM** : prévenir les risques de GC ou crash du broker
-2. **Alerte sur partitions non répliquées** : prévenir la perte de données
-3. **Analyse de latence réseau** : détecter un broker qui ralentit
-
-**Exemple de requête Flux pour JVM memory** :
+Exemple Flux pour `messages_in_total` :
 
 ```flux
-from(bucket:"kafka_metrics")
-  |> range(start: -1h)
-  |> filter(fn: (r) => r._measurement == "jvm_memory" and r._field == "used")
-  |> aggregateWindow(every: 1m, fn: max)
+from(bucket: "kafka_metrics")
+  |> range(start: -30m)
+  |> filter(fn: (r) => r._measurement == "kafka_topic_messages_in_total")
+  |> filter(fn: (r) => r._field == "Value")
+  |> aggregateWindow(every: 1m, fn: sum, createEmpty: false)
 ```
 
-> Les captures d’écran seraient générées depuis le **dashboard InfluxDB** montrant les métriques en temps réel.
+* Ce graphique permet de suivre l’activité de production sur les topics, détecter des anomalies ou des pics soudains.
 
 ---
 
