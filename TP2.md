@@ -169,7 +169,7 @@ from(bucket: "kafka_metrics")
 
 * Fonction d’agrégation `mean` dans une fenêtre de 1 minute pour lisser les valeurs et montrer les changements.
 
-![Mon image](img1.png)
+![Mon image ](img1.png)
 
 **11. Requête Flux pour observer la perte puis le retour d’un broker (`UnderReplicatedPartitions`)**
 
