@@ -1,7 +1,3 @@
-Parfait ! Voici un **rapport complet en Markdown** répondant à toutes les questions de ton TP 2025, structuré et détaillé pour que tu puisses directement le rendre.
-
----
-
 # TP — Observabilité Kafka via Docker Compose, Telegraf et InfluxDB
 
 ## Présentation
@@ -53,14 +49,14 @@ Le flux global :
                    ▼
           ┌─────────────────┐
           │   Kafka Cluster │
-          │ ┌─kafka-1─────┐│
-          │ ├─kafka-2─────┤│
-          │ └─kafka-3─────┘│
-          └─────┬──────────┘
+          │ ┌─kafka-1─────┐ │
+          │ ├─kafka-2─────┤ │
+          │ └─kafka-3─────┘ │
+          └─────┬───────────┘
                 │
    ┌────────────┴────────────┐
    │       Consumers         │
-   │ consumer-1 → consumer-4│
+   │ consumer-1 → consumer-4 │
    └────────────┬────────────┘
                 │
                 ▼
@@ -236,8 +232,3 @@ Ce TP permet de comprendre :
 * La **résilience** et l’impact d’une panne de broker
 * La possibilité de construire des **cas d’usage de supervision et d’alerting**
 
----
-
-Si tu veux, je peux te préparer **une version enrichie avec schémas ASCII plus lisibles et exemples de dashboards**, prête à copier-coller directement pour le TP.
-
-Veux‑tu que je fasse ça ?
