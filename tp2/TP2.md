@@ -1,4 +1,6 @@
-# TP — Observabilité Kafka via Docker Compose, Telegraf et InfluxDB
+<p align="center"><b>Mamadou Cherif DIALLO - Master 2 Informatique</b></p>
+
+# TP2 ADMINISTRATION BASE DE DONNEES
 
 ## Présentation
 
@@ -157,36 +159,48 @@ Dans ce TP :
 
 ---
 
-**10. Requête Flux pour voir les variations (exemple `kafka_active_controller`)**
+**10. Requête Flux pour visualiser les variations du contrôleur actif Kafka (avec filtres spécifiques)**
 
 ```flux
 from(bucket: "kafka_metrics")
-  |> range(start: -30m)
-  |> filter(fn: (r) => r._measurement == "kafka_active_controller")
-  |> filter(fn: (r) => r._field == "Value")
-  |> aggregateWindow(every: 1m, fn: mean, createEmpty: false)
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "kafka_active_controller")
+  |> filter(fn: (r) => r["_field"] == "Value")
+  |> filter(fn: (r) => r["broker"] == "kafka-1" or r["broker"] == "kafka-2" or r["broker"] == "kafka-3")
+  |> filter(fn: (r) => r["host"] == "684c4cc040ef")
+  |> filter(fn: (r) => 
+        r["jolokia_agent_url"] == "http://kafka-1:8778/jolokia" or 
+        r["jolokia_agent_url"] == "http://kafka-2:8778/jolokia" or 
+        r["jolokia_agent_url"] == "http://kafka-3:8778/jolokia"
+     )
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
+  |> derivative(unit: 1s, nonNegative: true)
+  |> yield(name: "derivative")
 ```
 
-* Fonction d’agrégation `mean` dans une fenêtre de 1 minute pour lisser les valeurs et montrer les changements.
+* Calcul d’une moyenne par fenêtre (`mean`) pour lisser les valeurs.
+* Application d’un `derivative()` pour révéler les variations dans le temps (changements du contrôleur actif).
 
 ![Mon image ](img1.png)
 
-**11. Requête Flux pour observer la perte puis le retour d’un broker (`UnderReplicatedPartitions`)**
+---
+
+**11. Requête Flux pour analyser le débit de messages Kafka (exemple `kafka_messages_in_total`)**
 
 ```flux
 from(bucket: "kafka_metrics")
-  |> range(start: -30m)
-  |> filter(fn: (r) => r._measurement == "kafka_under_replicated_partitions")
-  |> filter(fn: (r) => r._field == "Value")
-  |> aggregateWindow(every: 1m, fn: max, createEmpty: false)
+  |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
+  |> filter(fn: (r) => r["_measurement"] == "kafka_messages_in_total")
+  |> filter(fn: (r) => r["_field"] == "Value")
+  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)
+  |> derivative(unit: 1s, nonNegative: true)
+  |> yield(name: "messages_rate")
 ```
 
-* Lance `suspend_random_broker_loop.sh`.
-* Pendant 60 s, un broker est suspendu → la valeur `UnderReplicatedPartitions` augmente (partitions non répliquées).
-* Après 60 s, le broker est relancé → les partitions se répliquent et la métrique redescend à zéro.
-* Ce graphique montre clairement l’impact d’une panne temporaire.
+* Utilisation de `sum()` pour regrouper les messages produits dans chaque fenêtre.
+* Application de `derivative()` pour obtenir le **taux de production de messages par seconde** (débit réel).
 
-![Mon image](img2.png)
+![Mon image ](img2.png)
 
 ---
 
