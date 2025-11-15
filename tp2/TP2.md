@@ -190,11 +190,19 @@ from(bucket: "kafka_metrics")
 ```flux
 from(bucket: "kafka_metrics")
   |> range(start: v.timeRangeStart, stop: v.timeRangeStop)
-  |> filter(fn: (r) => r["_measurement"] == "kafka_messages_in_total")
-  |> filter(fn: (r) => r["_field"] == "Value")
-  |> aggregateWindow(every: v.windowPeriod, fn: sum, createEmpty: false)
+  |> filter(fn: (r) => r["_measurement"] == "kafka_active_controller")
+  |> filter(fn: (r) => r["_field"] == "Count")
+  |> filter(fn: (r) => r["broker"] == "kafka-1" or r["broker"] == "kafka-2" or r["broker"] == "kafka-3")
+  |> filter(fn: (r) => r["host"] == "684c4cc040ef")
+  |> filter(fn: (r) => 
+        r["jolokia_agent_url"] == "http://kafka-1:8778/jolokia" or 
+        r["jolokia_agent_url"] == "http://kafka-2:8778/jolokia" or 
+        r["jolokia_agent_url"] == "http://kafka-3:8778/jolokia"
+     )
+  |> aggregateWindow(every: v.windowPeriod, fn: mean, createEmpty: false)
   |> derivative(unit: 1s, nonNegative: true)
-  |> yield(name: "messages_rate")
+  |> yield(name: "messages_in_rate")
+
 ```
 
 * Utilisation de `sum()` pour regrouper les messages produits dans chaque fenêtre.
