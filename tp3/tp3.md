@@ -82,5 +82,20 @@ La répartition totale change, car Nantes et Montpellier n’ont pas le même ha
  La clé modifiée change la distribution globale.
 
 
+Lien avec la fonction de hachage Murmur2
+
+Kafka utilise :
+
+👉 Murmur2(key) % nombre_de_partitions
+pour choisir la partition.
+
+Donc :
+
+chaque clé tombe toujours dans la même partition, tant que le nombre de partitions ne change pas.
+
+si tu remplaces une clé → tu changes son hash → donc sa partition.
+
+c’est exactement pour ça que Nantes ≠ Montpellier → distribution différente.
+
 
 
