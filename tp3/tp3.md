@@ -98,4 +98,11 @@ si tu remplaces une clé → tu changes son hash → donc sa partition.
 c’est exactement pour ça que Nantes ≠ Montpellier → distribution différente.
 
 
+Remarque: La répartition des messages dépend entièrement de la clé. Kafka utilise la fonction de hachage Murmur2 pour calculer la partition : partition = murmur2(key) % numPartitions.
+
+Lorsque nous remplaçons "Nantes" par "Montpellier", les messages associés à cette clé sont envoyés dans une partition différente, car leur valeur de hachage est différente.
+
+Les autres villes conservent la même partition qu'avant car leur clé n’a pas changé.
+
+
 
