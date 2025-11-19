@@ -104,5 +104,36 @@ Lorsque nous remplaçons "Nantes" par "Montpellier", les messages associés à c
 
 Les autres villes conservent la même partition qu'avant car leur clé n’a pas changé.
 
+2)
 
+Pour se connecter à ksqlDB, j’ai utilisé l’interface Confluent Control Center disponible sur http://localhost:9021.
+Dans le menu KSQLDB Cluster, j’ai ouvert le moteur ksqlDB et exécuté la commande SHOW TOPICS;.
+Cela m’a permis de visualiser les topics temperatures (4 partitions) et commandes.
+L’outil permet de vérifier facilement la présence des topics Kafka et leur configuration sans passer par le CLI.
+
+voici ce que j'ai eu apres la commandes show topics;
+{
+  "@type": "kafka_topics",
+  "statementText": "SHOW TOPICS;",
+  "topics": [
+    {
+      "name": "commandes",
+      "replicaInfo": [
+        3
+      ]
+    },
+    {
+      "name": "temperatures",
+      "replicaInfo": [
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  ],
+  "warnings": [
+
+  ]
+}
 
