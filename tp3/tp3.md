@@ -137,3 +137,78 @@ voici ce que j'ai eu apres la commandes show topics;
   ]
 }
 
+
+
+
+
+3) j'ai tapé la commande juste apres avoir modifié un peu le code du producer 
+while True:
+    ville = random.choice(villes)
+    message = {"ville": ville, "t": round(random.uniform(5,35),1), "ts": int(time.time()*1000)}
+    producer.produce("temperatures", key=ville, value=json.dumps(message))
+    producer.flush()
+    time.sleep(0.2)  # vitesse adaptée
+
+
+
+CREATE STREAM S_TEMPS_RAW1 (
+  ville STRING,
+  t DOUBLE,
+  ts BIGINT
+) WITH (
+  KAFKA_TOPIC='temperatures',
+  VALUE_FORMAT='JSON',
+  TIMESTAMP='ts'
+);
+
+"pir verofoer la creation j'ai tapé 
+SHOW STREAMS;
+et j'ai vu le s_temps_raw1
+
+et pour visualiser j'ai tapé
+
+SELECT * FROM S_TEMPS_RAW1 EMIT CHANGES;
+
+pour voir les enregistrements de la ville paris, j'ai tapé
+
+SELECT * FROM S_TEMPS_RAW1 WHERE ville='Paris' EMIT CHANGES;
+
+pour tout reafficher, on peut utiliser la commande
+
+SELECT * FROM S_TEMPS_RAW
+EMIT CHANGES
+LIMIT 1000;
+
+
+j'ai créé un stream partitionné par ville (S_TEMPS_BY_VILLE)
+
+CREATE STREAM S_TEMPS_BY_VILLE
+WITH (KAFKA_TOPIC='temperatures_by_ville', PARTITIONS=4)
+AS
+SELECT ville, t, ts
+FROM S_TEMPS_RAW1
+PARTITION BY ville
+EMIT CHANGES;
+
+pour verifier j'ai tapé ça et ça a bien marche
+
+SHOW STREAMS;
+DESCRIBE S_TEMPS_BY_VILLE;
+
+ET enfin Dans le Control Center → onglet Persistent Queries.
+
+Pourquoi S_TEMPS_BY_VILLE est persistante :
+
+Elle lit un stream existant (S_TEMPS_RAW1)
+
+Elle écrit en permanence dans un autre topic (temperatures_by_ville)
+
+Elle reste active et continue de traiter les messages en temps réel
+
+🔹 Les requêtes persistantes sont donc “actives” tant que ksqlDB tourne.
+
+
+
+
+
+
