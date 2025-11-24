@@ -211,7 +211,60 @@ Elle reste active et continue de traiter les messages en temps réel
 🔹 Les requêtes persistantes sont donc “actives” tant que ksqlDB tourne.
 
 
+4) 
+Creation de la table avec fenêtre TUMBLING
+
+CREATE TABLE T_MAX_5M AS
+SELECT
+  ville,
+  WINDOWSTART AS w_start,
+  WINDOWEND   AS w_end,
+  MAX(t)      AS t_max
+FROM S_TEMPS_BY_VILLE
+WINDOW TUMBLING (SIZE 5 MINUTES, GRACE PERIOD 30 SECONDS)
+GROUP BY ville
+EMIT CHANGES;
+
+Analyse de cette commande :
+
+WINDOW TUMBLING (SIZE 5 MINUTES) : la table regroupe les messages par blocs de 5 minutes, non chevauchants.
+
+GRACE PERIOD 30 SECONDS : permet d’accepter des messages retardataires jusqu’à 30 secondes après la fin de la fenêtre.
+
+MAX(t) : calcule la température maximale dans chaque fenêtre pour chaque ville.
+
+GROUP BY ville : agrégation par ville.
+
+EMIT CHANGES : la table est mise à jour en temps réel, à mesure que de nouveaux messages arrivent.
 
 
 
+Que voit-on dans l’onglet "Persistent Queries" ?
+
+Tu devrais voir une nouvelle requête persistante, par exemple :
+
+Query ID	Type	Source Stream	Sink Table	Status
+CSAS_T_MAX_5M_1	PERSISTENT	S_TEMPS_BY_VILLE	T_MAX_5M	RUNNING
+
+
+Explication :
+
+Cette requête est persistante car elle lit un stream (S_TEMPS_BY_VILLE) en continu et écrit les résultats dans une table (T_MAX_5M).
+
+Même si de nouveaux messages arrivent dans le topic temperatures, la table se met automatiquement à jour avec les nouvelles fenêtres et nouveaux maximas.
+
+La persistance vient du fait que ksqlDB garde l’état de la fenêtre et des agrégations en mémoire (ou dans le changelog topic associé).
+
+visualisation des valeurs max
+SELECT * FROM T_MAX_5M EMIT CHANGES;
+
+Explications :
+
+Chaque ligne correspond à une fenêtre de 5 minutes.
+
+T_MAX correspond à la température maximale observée dans cette fenêtre pour la ville.
+
+Dès qu’une nouvelle fenêtre commence, de nouvelles lignes apparaissent.
+
+En triant par VILLE, tu peux suivre facilement l’évolution des maximas par ville.
 
