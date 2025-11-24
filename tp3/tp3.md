@@ -171,6 +171,9 @@ SELECT * FROM S_TEMPS_RAW1 EMIT CHANGES;
 
 pour voir les enregistrements de la ville paris, j'ai tapé
 
+
+## photo
+
 SELECT * FROM S_TEMPS_RAW1 WHERE ville='Paris' EMIT CHANGES;
 
 pour tout reafficher, on peut utiliser la commande
