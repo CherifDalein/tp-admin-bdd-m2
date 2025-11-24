@@ -160,6 +160,8 @@ CREATE STREAM S_TEMPS_RAW1 (
 SHOW STREAMS;
 ```
 
+![Mon image ](tp3.png)
+
 ### Visualisation du flux
 
 Toutes les données :
