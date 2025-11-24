@@ -268,3 +268,154 @@ Dès qu’une nouvelle fenêtre commence, de nouvelles lignes apparaissent.
 
 En triant par VILLE, tu peux suivre facilement l’évolution des maximas par ville.
 
+
+5)
+
+Création de la table T_LAST
+
+CREATE TABLE T_LAST AS
+SELECT ville,
+       LATEST_BY_OFFSET(t) AS t_last,
+       LATEST_BY_OFFSET(ts) AS ts_last
+FROM S_TEMPS_BY_VILLE
+GROUP BY ville
+EMIT CHANGES;
+
+Explication simple :
+
+LATEST_BY_OFFSET() récupère la dernière valeur arrivée dans le topic pour une clé donnée (ici, la ville).
+
+GROUP BY ville garantit que chaque ville a 1 entrée unique dans la table.
+
+La table est mise à jour à chaque nouveau message.
+
+La table T_LAST représente donc en temps réel la dernière température reçue pour chaque ville.
+
+✔ Méthode 1 : Visualiser la table en streaming
+
+Tu lances dans ksqlDB :
+SELECT * FROM T_LAST EMIT CHANGES;
+
+Méthode 2 : Consulter la table comme une table SQL
+
+(Utilise sans EMIT CHANGES si tu veux juste un snapshot)
+SELECT * FROM T_LAST;
+Tu obtiendras une seule ligne par ville, représentant le dernier état connu.
+
+
+
+Requête pour obtenir en permanence la dernière valeur de température pour Lyon
+
+Tu veux suivre en temps réel uniquement Lyon.
+SELECT t_last, ts_last
+FROM T_LAST
+WHERE ville = 'Lyon'
+EMIT CHANGES;
+
+Cela te donne une sortie continue, mise à jour dès qu'un nouveau message est produit pour Lyon.
+
+
+
+# ✅ **7) HOPPING Windows (option)**
+
+Tu vas maintenant créer une table qui fait une **moyenne glissante des températures** avec :
+
+* **Fenêtre de 10 minutes** (SIZE)
+* **Avance / saut de 2 minutes** (ADVANCE BY)
+
+👉 Cela signifie que **toutes les 2 minutes**, une nouvelle fenêtre de 10 minutes est calculée.
+Les fenêtres **se chevauchent**, contrairement au TUMBLING.
+
+---
+
+# 1️⃣ **Créer la table T_AVG_10M_HOP2**
+
+Dans ksqlDB (Control Center ou curl) :
+
+```sql
+CREATE TABLE T_AVG_10M_HOP2 AS
+SELECT
+  ville,
+  WINDOWSTART AS w_start,
+  WINDOWEND   AS w_end,
+  AVG(t)      AS t_avg
+FROM S_TEMPS_BY_VILLE
+WINDOW HOPPING (SIZE 10 MINUTES, ADVANCE BY 2 MINUTES)
+GROUP BY ville
+EMIT CHANGES;
+```
+
+Tu devrais recevoir une réponse du type :
+
+```
+Table created
+```
+
+Et un **Persistent Query** va apparaître.
+
+---
+
+# 2️⃣ **Que se passe-t-il derrière ?**
+
+Le serveur ksqlDB crée une **query persistante** qui :
+
+* lit en continu le stream `S_TEMPS_BY_VILLE`
+* calcule des fenêtres qui se chevauchent
+* crée différentes entrées dans la table selon les fenêtres actives
+
+---
+
+# 3️⃣ **Visualiser l’évolution de la table**
+
+Exécute :
+
+```sql
+SELECT * FROM T_AVG_10M_HOP2 EMIT CHANGES;
+```
+
+Tu vas voir des lignes comme :
+
+| VILLE | W_START  | W_END    | T_AVG |
+| ----- | -------- | -------- | ----- |
+| Paris | 21:00:00 | 21:10:00 | 23.5  |
+| Paris | 21:02:00 | 21:12:00 | 24.1  |
+| Paris | 21:04:00 | 21:14:00 | 22.8  |
+| Lyon  | 21:00:00 | 21:10:00 | 19.4  |
+
+👉 Tu remarques que *pour une même ville*, plusieurs fenêtres actives existent **en même temps**.
+
+---
+
+# 4️⃣ **Explication à mettre dans ton rapport**
+
+Voici une explication simple et propre :
+
+> La fenêtre HOPPING est une fenêtre glissante avec chevauchement.
+>
+> * La durée totale de la fenêtre est de 10 minutes.
+> * Une nouvelle fenêtre commence toutes les 2 minutes, ce qui crée plusieurs fenêtres simultanées.
+>   À chaque nouveau message, toutes les fenêtres qui couvrent ce timestamp sont mises à jour.
+>   La table T_AVG_10M_HOP2 stocke alors plusieurs lignes par ville, chacune correspondant à une fenêtre différente.
+
+---
+
+# 5️⃣ **Comment montrer l’évolution ?**
+
+Pendant que ton producer envoie des données, tu observes :
+
+```sql
+SELECT * FROM T_AVG_10M_HOP2 EMIT CHANGES;
+```
+
+Puis trier dans l’interface par ville, w_start, w_end.
+
+Tu verras les moyennes évoluer comme :
+
+```
+Paris | 21:00:00 | 21:10:00 | 23.5
+Paris | 21:02:00 | 21:12:00 | 24.1
+Paris | 21:04:00 | 21:14:00 | 22.8
+```
+
+👉 Chaque nouvelle valeur met à jour toutes les fenêtres où elle appartient.
+
