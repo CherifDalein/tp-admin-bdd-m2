@@ -2,6 +2,12 @@
 
 # TP1 ADMINISTRATION BASE DE DONNEES
 
+## Objectifs
+
+L’objectif de ce TP est de se familiariser avec le traitement de flux en temps réel à l’aide de Kafka et ksqlDB. Il s’agit d’apprendre à créer, manipuler et interroger des streams et des tables matérialisées afin de comprendre comment les données en continu peuvent être transformées, agrégées et analysées.
+À travers différentes opérations (création de streams, jointures, fenêtres temporelles TUMBLING et HOPPING, calcul de métriques en temps réel), ce TP permet d’acquérir une compréhension concrète des concepts fondamentaux du stream processing.
+Les commandes et observations réalisées montrent comment ksqlDB réagit à l’arrivée continue de messages, et comment les agrégations se recalculent dynamiquement selon les fenêtres définies et les dernières valeurs reçues.
+
 ````md
 # TP Kafka + ksqlDB  
 ## Rapport complet et structuré
